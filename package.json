@@ -1,0 +1,19 @@
+{
+  "name": "pesu-scraper-app",
+  "version": "1.0.0",
+  "description": "PESU Scraper in an app!",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "watch": "nodemon --exec electron ."
+  },
+  "author": "Zaki-1337",
+  "license": "ISC",
+  "dependencies": {
+    "puppeteer-core": "^19.6.3",
+    "puppeteer-in-electron": "^3.0.5"
+  },
+  "devDependencies": {
+    "electron": "^23.0.0"
+  }
+}

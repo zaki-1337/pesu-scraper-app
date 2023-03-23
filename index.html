@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+
+    <div id="navbar">
+      <button id="back" style="display: none;">Back</button>
+
+      <button id="select-path" style="display: none;">Choose Save Location</button>
+    </div>
+
+    <div class="window">
+      <div class="loginWindow">
+        UserName: <input id="unameField" type="text" name="uname"><br>
+        Password: <input id="passwdField" type="password" name="passwd"><br>
+        <button id="submit-button">Submit</button>
+  
+        <div id="login-fail" style="display: none;">The Credentials You Entered Are Invalid. Please Try Again.</div>
+      </div>
+    </div>
+
+    <div id="list-renderer">
+
+      <div id="subjectList" style="display: none;"></div>
+
+      <div id="unitList" style="display: none;"></div>
+
+      <div id="topicList" style="display: none;"></div>
+
+    </div>
+
+    <div id="bottombar">
+      <button id="slides" style="display: none;">Slides</button>
+
+      <button id="notes" style="display: none;">Notes</button>
+   </div>
+
+   <div class="spanner">
+   <div class="loader"></div>
+   <p>Getting your content, please be patient.</p>
+   </div>
+
+    <script>
+      // You can also require other files to run in this process
+      require('./renderer.js')
+    </script>
+  </body>
+</html>
