@@ -3,7 +3,6 @@
 ////////////////////////////////////////////////////
 
 // in case PESU Academy logs the user out for inactivity
-// not implemented yet
 let userNameC;
 let passWordC;
 
@@ -81,8 +80,61 @@ exports.clickMyCourses = async function (page) {
   await page.$eval("#menuTab_653 > a > span.menu-name", (elem) => elem.click());
 };
 
-exports.getSubjects = async function (page) {
+exports.getSemesters = async function (page) {
   // Get All Subjects
+  await page.waitForSelector("#semesters option");
+  return await page.evaluate(() => {
+    const semestersOptions = document.querySelectorAll("#semesters > option");
+    let semesters = {};
+    semestersOptions.forEach((sem) => (semesters[sem.label] = sem.value));
+    return semesters;
+  });
+};
+
+exports.clickSemester = async function (page, semesterValue) {
+  await page.waitForSelector("#semesters option");
+
+  const previousSem = await page.evaluate(() => {
+    return document.querySelector("#semesters").value;
+  });
+
+  if (semesterValue == previousSem) return;
+
+  await page.waitForSelector(".table");
+  const prevSubjects = await page.evaluate(() => {
+    const mainSubjects = document.querySelectorAll(".table tbody tr");
+    let subjects = [];
+    mainSubjects.forEach((sub) => subjects.push(sub.innerText));
+    return subjects;
+  });
+
+  await page.evaluate((semVal) => {
+    const selectorElement = document.querySelector("#semesters");
+    selectorElement.value = semVal;
+    const eventManual = new Event("change", { bubbles: true });
+    selectorElement.dispatchEvent(eventManual);
+  }, semesterValue);
+
+  await page.waitForFunction(
+    (prevSub1) => {
+      if (
+        document
+          .querySelector("#CourseContentId h3")
+          ?.textContent.includes("No information available")
+      )
+        return true;
+      if (prevSub1 != document.querySelector(".table tbody tr").innerText)
+        return true;
+      return false;
+    },
+    {},
+    prevSubjects[0]
+  );
+};
+
+exports.getSubjects = async function (page, semesterValue) {
+  // Get All Subjects
+  await module.exports.clickSemester(page, semesterValue);
   await page.waitForSelector(".table");
   return await page.evaluate(() => {
     const mainSubjects = document.querySelectorAll(".table tbody tr");
@@ -151,7 +203,7 @@ exports.clickLesson = async function (page, lessonNumber) {
 
   // click ith lesson
   await page.waitForSelector(
-    ".course-info-content .tab-content #courseUnits #courselistunit li:nth-of-type(5) a"
+    ".course-info-content .tab-content #courseUnits #courselistunit li a"
   );
   await page.$eval(
     `.course-info-content .tab-content #courseUnits #courselistunit li:nth-of-type(${lessonNumber}) a`,
@@ -263,6 +315,7 @@ exports.clickSlidesNotesMenu = async function (page, type) {
 
 exports.runDownloadLoop = async function (
   page,
+  semesterValue,
   subjectNumber,
   lessonNumber,
   numsOfTopics,
@@ -275,6 +328,7 @@ exports.runDownloadLoop = async function (
     await module.exports.clickSlidesNotesMenu(page, type);
     const toWait = await module.exports.downloadSlides(page);
     await module.exports.clickMyCourses(page);
+    await module.exports.clickSemester(page, semesterValue);
     await module.exports.clickSubject(page, subjectNumber);
     await module.exports.clickLesson(page, lessonNumber);
     count++;

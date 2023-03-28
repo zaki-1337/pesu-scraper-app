@@ -21,6 +21,7 @@ const url = "https://www.pesuacademy.com/Academy";
 let fileCount = 0 + 1;
 let downloading = 0;
 let downloadType = "Slides";
+let semValue;
 let subjectName;
 let unitName;
 
@@ -99,9 +100,14 @@ ipcMain.handle("login-PESU", async (e, uname, passwd) => {
   // pesuWindow.hide();
 });
 
-ipcMain.handle("get-subjects", async (e) => {
+ipcMain.handle("get-semesters", async (e) => {
   await scraper.clickMyCourses(page);
-  return await scraper.getSubjects(page);
+  return await scraper.getSemesters(page);
+});
+
+ipcMain.handle("get-subjects", async (e, semesterValue) => {
+  semValue = semesterValue;
+  return await scraper.getSubjects(page, semesterValue);
 });
 
 ipcMain.handle("get-units", async (e, subjectNumber, subject) => {
@@ -118,11 +124,12 @@ ipcMain.handle("get-topics", async (e, lessonNumber, unit) => {
 
 ipcMain.handle(
   "download-content",
-  async (e, subjectNumber, lessonNumber, numsOfTopics, type) => {
+  async (e, semesterValue, subjectNumber, lessonNumber, numsOfTopics, type) => {
     downloadType = type[0].toUpperCase() + type.slice(1);
     fileCount = 1;
     await scraper.runDownloadLoop(
       page,
+      semesterValue,
       subjectNumber,
       lessonNumber,
       numsOfTopics,
@@ -139,6 +146,7 @@ ipcMain.handle(
 
 ipcMain.handle("go-back", async (e) => {
   await scraper.clickMyCourses(page);
+  await scraper.clickSemester(page, semValue);
 });
 
 ipcMain.handle("select-path", () => {

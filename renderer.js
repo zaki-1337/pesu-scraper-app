@@ -6,12 +6,12 @@ const { ipcRenderer } = require("electron");
 const windowLoginParent = document.querySelector(".window");
 const loginWindow = document.querySelector(".loginWindow");
 
-const loginBtn = document.querySelector("#login");
 const submitBtn = document.querySelector("#submit-button");
 const backBtn = document.querySelector("#back");
 const slidesBtn = document.querySelector("#slides");
 const notesBtn = document.querySelector("#notes");
 const subjectsList = document.querySelector("#subjectList");
+const semestersList = document.querySelector("#semesterList");
 const unitsList = document.querySelector("#unitList");
 const topicsList = document.querySelector("#topicList");
 const pathBtn = document.querySelector("#select-path");
@@ -19,6 +19,7 @@ const spanner = document.querySelector(".spanner");
 
 let state = "atlogin";
 
+let semesterValue;
 let subjectNumber;
 let subjects = [];
 let lessonNumber;
@@ -43,49 +44,52 @@ submitBtn.addEventListener("click", async function (e) {
   }
 
   spanner.classList.toggle("show");
-  loginBtn.style.display = "none";
   pathBtn.style.display = "flex";
   loginWindow.style.display = "none";
   windowLoginParent.style.display = "none";
   document.querySelector("#login-fail").style.display = "none";
 
-  subjects = await ipcRenderer.invoke("get-subjects");
+  semesters = await ipcRenderer.invoke("get-semesters"); // object {"sem-i":"option-value-html"}
 
-  subjects.forEach(function (sub, i) {
-    const html = `<div class="subject" data-subno=${i + 1}>${
+  Object.keys(semesters).forEach(function (sem, i) {
+    const html = `<div class="semester" data-semvalue=${semesters[sem]}>${
       i + 1
-    }. ${sub}</div>`;
+    }. ${sem}</div>`;
 
-    subjectsList.insertAdjacentHTML("beforeend", html);
+    semestersList.insertAdjacentHTML("beforeend", html);
   });
 
-  subjectsList.style.display = "flex";
+  semestersList.style.display = "flex";
   spanner.classList.toggle("show");
 
-  state = "atsubjects";
+  state = "atsemesters";
 });
 
-loginBtn.addEventListener("click", async () => {
-  spanner.classList.toggle("show");
-  loginBtn.style.display = "none";
-  loginWindow.style.display = "none";
-  windowLoginParent.style.display = "none";
+semestersList.addEventListener("click", async function (e) {
+  if (e.target.classList.contains("semester")) {
+    semesterValue = e.target.dataset.semvalue;
 
-  subjects = await ipcRenderer.invoke("check-login");
+    spanner.classList.toggle("show");
+    semestersList.style.display = "none";
 
-  subjects.forEach(function (sub, i) {
-    const html = `<div class="subject" data-subno=${i + 1}>${
-      i + 1
-    }. ${sub}</div>`;
+    subjectsList.innerHTML = "";
 
-    subjectsList.insertAdjacentHTML("beforeend", html);
-  });
+    subjects = await ipcRenderer.invoke("get-subjects", semesterValue);
 
-  subjectsList.style.display = "flex";
-  pathBtn.style.display = "flex";
-  spanner.classList.toggle("show");
+    subjects.forEach(function (sub, i) {
+      const html = `<div class="subject" data-subno=${i + 1}>${
+        i + 1
+      }. ${sub}</div>`;
 
-  state = "atsubjects";
+      subjectsList.insertAdjacentHTML("beforeend", html);
+    });
+
+    subjectsList.style.display = "flex";
+    spanner.classList.toggle("show");
+
+    backBtn.style.display = "flex";
+    state = "atsubjects";
+  }
 });
 
 subjectsList.addEventListener("click", async function (e) {
@@ -119,10 +123,10 @@ subjectsList.addEventListener("click", async function (e) {
 
     unitsList.style.display = "flex";
     spanner.classList.toggle("show");
-  }
 
-  backBtn.style.display = "flex";
-  state = "atunits";
+    backBtn.style.display = "flex";
+    state = "atunits";
+  }
 });
 
 unitsList.addEventListener("click", async function (e) {
@@ -186,7 +190,6 @@ backBtn.addEventListener("click", async function () {
 
     state = "atunits";
   } else if (state == "atunits") {
-    backBtn.style.display = "none";
     spanner.classList.toggle("show");
 
     await ipcRenderer.invoke("go-back");
@@ -197,6 +200,19 @@ backBtn.addEventListener("click", async function () {
     spanner.classList.toggle("show");
 
     state = "atsubjects";
+  } else if (state == "atsubjects") {
+    backBtn.style.display = "none";
+    spanner.classList.toggle("show");
+
+    await ipcRenderer.invoke("go-back");
+
+    semestersList.style.display = "flex";
+    subjectsList.style.display = "none";
+    topicsList.style.display = "none";
+    unitsList.style.display = "none";
+    spanner.classList.toggle("show");
+
+    state = "atsemesters";
   }
 });
 
@@ -205,6 +221,7 @@ slidesBtn.addEventListener("click", async function () {
   await ipcRenderer
     .invoke(
       "download-content",
+      semesterValue,
       subjectNumber,
       lessonNumber,
       numsOfTopics,
@@ -219,6 +236,7 @@ notesBtn.addEventListener("click", async function () {
   spanner.classList.toggle("show");
   await ipcRenderer.invoke(
     "download-content",
+    semesterValue,
     subjectNumber,
     lessonNumber,
     numsOfTopics,
