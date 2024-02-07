@@ -269,17 +269,17 @@ exports.clickTopic = async function (page, topicNumber) {
 
 exports.clickSlidesNotesMenu = async function (page, type) {
   // to handle 'AV summary' section sometimes containing a link which gets selected by the selector
-  let need;
+  // let need;
   await page.waitForSelector("#CourseContent .tab-content");
-  need = await page.evaluate(() => {
-    if (
-      document.querySelector(
-        "#CourseContent .tab-content .content-type-area div .col-md-12"
-      )
-    )
-      return 1;
-    return 0;
-  });
+  // need = await page.evaluate(() => {
+  //   if (
+  //     document.querySelector(
+  //       "#CourseContent .tab-content .content-type-area div .col-md-12"
+  //     )
+  //   )
+  //     return 1;
+  //   return 0;
+  // });
 
   // click slides / notes
   const ifSlidesOrNotes = type == "slides" ? 3 : 4;
@@ -291,26 +291,40 @@ exports.clickSlidesNotesMenu = async function (page, type) {
     (elem) => elem.click()
   );
 
-  // check if the selector is selecting a video link, if so, wait until that changes
-  if (need)
-    await page.waitForFunction(() => {
+  // wait for tab change
+  await page.waitForFunction(
+    (ifSlidesOrNotes) => {
       if (
-        document
-          .querySelector(
-            "#CourseContent .tab-content .content-type-area div .col-md-12 .link-preview"
-          )
-          ?.getAttribute("onclick")
-          .includes("vimeo") ||
-        document
-          .querySelector(
-            "#CourseContent .tab-content .content-type-area div .col-md-12 .link-preview"
-          )
-          ?.getAttribute("onclick")
-          .includes("openExternalContent")
+        document.querySelector("#captureCurrentTabVal").value ==
+        ifSlidesOrNotes - 1
       )
-        return false;
-      else return true;
-    });
+        return true;
+      return false;
+    },
+    {},
+    ifSlidesOrNotes
+  );
+
+  // check if the selector is selecting a video link, if so, wait until that changes
+  // if (need)
+  //   await page.waitForFunction(() => {
+  //     if (
+  //       document
+  //         .querySelector(
+  //           "#CourseContent .tab-content .content-type-area div .col-md-12 .link-preview"
+  //         )
+  //         ?.getAttribute("onclick")
+  //         .includes("vimeo") ||
+  //       document
+  //         .querySelector(
+  //           "#CourseContent .tab-content .content-type-area div .col-md-12 .link-preview"
+  //         )
+  //         ?.getAttribute("onclick")
+  //         .includes("openExternalContent")
+  //     )
+  //       return false;
+  //     else return true;
+  //   });
 };
 
 exports.runDownloadLoop = async function (
@@ -400,8 +414,11 @@ exports.downloadSlidesOld = async function (page) {
 exports.downloadSlides = async function (page) {
   // Download Type: Both
 
+  // await page.waitForSelector(
+  //   ".tab-content > div > div > iframe,.tab-content > div > iframe, .content-type-area .link-preview iframe,#CourseContent .tab-content .content-type-area .link-preview, .tab-content > .tab-pane > h2, #CourseContent .tab-content .content-type-area div, .tab-content > .tab-pane > h2"
+  // );
   await page.waitForSelector(
-    ".tab-content > div > div > iframe,.tab-content > div > iframe, .content-type-area .link-preview iframe,#CourseContent .tab-content .content-type-area .link-preview, .tab-content > .tab-pane > h2"
+    "#CourseContent .tab-content .content-type-area div iframe.elem-fullscreen, #CourseContent .tab-content .content-type-area div .link-preview, .tab-content > .tab-pane > h2, #CourseContent .tab-content .content-type-area .link-preview"
   );
 
   await page.waitForFunction(() => {
@@ -430,6 +447,7 @@ exports.downloadSlides = async function (page) {
     downloadArr = Array.from(downloadArr).filter((el) =>
       el.querySelector(".col-md-12 , iframe")
     );
+
     // replaced forEach with function because needed to implement timeOut to fix multiple slides in a page not downloading properly
     let countEle = 0;
     const clickIt = () => {
@@ -442,7 +460,34 @@ exports.downloadSlides = async function (page) {
         );
         btn.setAttribute("download", "FILE_NAME");
         btn.click();
-      } else downloadArr[countEle].querySelector(".link-preview").click();
+      } else if (
+        downloadArr[countEle]
+          .querySelector("a")
+          ?.getAttribute("onclick")
+          ?.includes("loadIframe")
+      ) {
+        let str = downloadArr[countEle]
+          .querySelector("a")
+          ?.getAttribute("onclick");
+        let startI = str.indexOf("'");
+        let endI = str.indexOf("'", startI + 1);
+        let result = str.substring(startI + 1, endI);
+
+        console.log(result);
+
+        const btn = document.createElement("a");
+        btn.setAttribute("href", result);
+        btn.setAttribute("download", "FILE_NAME");
+        btn.click();
+      } else if (
+        !downloadArr[countEle]
+          .querySelector(".link-preview")
+          ?.getAttribute("onclick")
+          ?.includes("drive.google.com")
+      ) {
+        downloadArr[countEle].querySelector(".link-preview").click();
+      }
+
       countEle++;
       // if (countEle >= downloadArr.length) return;
       setTimeout(clickIt, 1000);
