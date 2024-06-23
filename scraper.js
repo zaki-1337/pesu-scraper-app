@@ -158,7 +158,7 @@ exports.clickSubject = async function (page, subjectNumber) {
 exports.getLessons = async function (page) {
   // Get All Units/Lessons
   await page.waitForSelector(
-    ".course-info-content .tab-content #courseUnits #courselistunit li a, .course-info-content .tab-content #courseUnits .text-center"
+    "#courselistunit li a, .course-info-content .tab-content #courseUnits .text-center"
   );
   return await page.evaluate(() => {
     if (
@@ -171,7 +171,8 @@ exports.getLessons = async function (page) {
       return [];
 
     const mainLessons = document.querySelectorAll(
-      ".course-info-content .tab-content #courseUnits #courselistunit li a"
+      // ".course-info-content .tab-content #courseUnits #courselistunit li a"
+      "#courselistunit li a"
     );
     let lessons = [];
     mainLessons.forEach((sub) => lessons.push(sub.innerText));
@@ -202,11 +203,9 @@ exports.clickLesson = async function (page, lessonNumber) {
   });
 
   // click ith lesson
-  await page.waitForSelector(
-    ".course-info-content .tab-content #courseUnits #courselistunit li a"
-  );
+  await page.waitForSelector("#courselistunit li a");
   await page.$eval(
-    `.course-info-content .tab-content #courseUnits #courselistunit li:nth-of-type(${lessonNumber}) a`,
+    `#courselistunit li:nth-of-type(${lessonNumber}) a`,
     (elem) => elem.click()
   );
 
@@ -485,7 +484,7 @@ exports.downloadSlides = async function (page) {
           ?.getAttribute("onclick")
           ?.includes("drive.google.com")
       ) {
-        downloadArr[countEle].querySelector(".link-preview").click();
+        downloadArr[countEle].querySelector(".link-preview")?.click();
       }
 
       countEle++;
